@@ -16,8 +16,12 @@
         <div class="col">
             <div class="card">
                 <img class="large-front-thumbnail"
-                     src="{{ 'static/imagenet_subset/'+image_id }} "
-                     alt={{ image_id }}/>
+                    {% if backButton == "/classifications" %}
+                    src="{{ 'static/imagenet_subset/'+image_id }}"
+                    {% else %}                    
+                    src="{{ '../static/imagenet_subset/'+image_id }}"
+                    {% endif %}
+                    alt={{ image_id }}/>
             </div>
         </div>
         <div class="col">
@@ -29,9 +33,12 @@
                         </div>
                     </div>
                 </div>
-                <a class="btn btn-primary" href="/classifications" role="button">Back</a>
+                <a class="btn btn-primary" href={{ backButton }} role="button">Back</a>
         </div>
     </div>
+    {% if backButton == "/classifications" %}
     <script src="{{ "static/graph.js" }}" id="makeGraph" classification_scores="{{classification_scores}}"></script>
+    {% else %}
+    <script src="{{ "../static/graph.js" }}" id="makeGraph" classification_scores="{{classification_scores}}"></script>
+    {% endif %}
 {% endblock %}
-
