@@ -111,20 +111,35 @@ async def create_upload_file(
     request: Request,
     image_id: UploadFile = File(...)
 ):   
-    with open("./app/static/imagenet_subset/n00000000_usersImage.JPEG", "wb") as buffer:
-        shutil.copyfileobj(image_id.file, buffer)
-        form = ClassificationForm(request)      
-    await form.load_data()
-    image_id = "n00000000_usersImage.JPEG"
-    model_id = form.model_id
-    classification_scores = classify_image(model_id=model_id, img_id=image_id)
-    request._url = URL("/classifications")
-    return templates.TemplateResponse(
-        "classification_output.html",
-        {
-            "request": request,
-            "image_id": image_id,
-            "classification_scores": json.dumps(classification_scores),
-            "backButton" : "/users_image"
-        },
-    )
+    if(
+        image_id.filename.endswith(".jpg") |
+        image_id.filename.endswith(".JPEG") |
+        image_id.filename.endswith(".png")
+    ):
+        with open("./app/static/imagenet_subset/n00000000_usersImage.JPEG", "wb") as buffer:
+            shutil.copyfileobj(image_id.file, buffer)
+            form = ClassificationForm(request)      
+        await form.load_data()
+        image_id = "n00000000_usersImage.JPEG"
+        model_id = form.model_id
+        classification_scores = classify_image(model_id=model_id, img_id=image_id)
+        request._url = URL("/classifications")
+        return templates.TemplateResponse(
+            "classification_output.html",
+            {
+                "request": request,
+                "image_id": image_id,
+                "classification_scores": json.dumps(classification_scores),
+                "backButton" : "/users_image"
+            },
+        )
+    else:
+        return templates.TemplateResponse(
+            "classification_output.html",
+            {
+                "request": request,
+                "image_id": "sorry.png",
+                "classification_scores": "SRY!",
+                "backButton" : "/users_image"
+            },
+        )
