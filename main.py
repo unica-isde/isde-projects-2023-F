@@ -114,7 +114,8 @@ async def create_upload_file(
     if(
         image_id.filename.endswith(".jpg") |
         image_id.filename.endswith(".JPEG") |
-        image_id.filename.endswith(".png")
+        image_id.filename.endswith(".png") |
+        image_id.filename.endswith(".webp")
     ):
         with open("./app/static/imagenet_subset/n00000000_usersImage.JPEG", "wb") as buffer:
             shutil.copyfileobj(image_id.file, buffer)
@@ -130,7 +131,7 @@ async def create_upload_file(
                 "request": request,
                 "image_id": image_id,
                 "classification_scores": json.dumps(classification_scores),
-                "backButton" : "/users_image"
+                "backButton" : "/delete"
             },
         )
     else:
@@ -142,4 +143,15 @@ async def create_upload_file(
                 "classification_scores": "SRY!",
                 "backButton" : "/users_image"
             },
+        )
+
+@app.get("/delete")
+async def deleteFile(request : Request):
+    if(os.path.isfile("./app/static/imagenet_subset/n00000000_usersImage.JPEG")):
+        os.remove("./app/static/imagenet_subset/n00000000_usersImage.JPEG")
+    return templates.TemplateResponse(
+            "deleteFile.html",
+            {
+                "request": request,
+            }
         )
