@@ -11,7 +11,7 @@ from app.config import Configuration
 from app.forms.classification_form import ClassificationForm
 from app.ml.classification_utils import classify_image
 from app.utils import list_images
-
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 config = Configuration()
@@ -60,3 +60,11 @@ async def request_classification(request: Request):
         },
     )
 
+
+"""
+@app.get("/")
+def main():
+    file_path = "large-video-file.mp4"
+    return FileResponse(path=file_path, filename=file_path, media_type='text/mp4')
+
+"""
