@@ -10,7 +10,9 @@ from rq.job import Job
 from app.config import Configuration
 from app.forms.classification_form import ClassificationForm
 from app.ml.classification_utils import classify_image
-from app.utils import list_images
+from app.utils import list_images, generate_histogram
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 app = FastAPI()
@@ -64,5 +66,23 @@ async def request_classification(request: Request):
 def create_histograms(request: Request):
     return templates.TemplateResponse(
         "histogram_select.html",
-        {"request": request, "images": list_images(), "models": Configuration.models},
+        {"request": request, "images": list_images()},
+    )
+
+@app.post("/histograms")
+async def request_histogram(request: Request):
+    form = ClassificationForm(request)
+    await form.load_data()
+    image_id = form.image_id
+
+    # Generate the histogram
+    histogram_base64 = generate_histogram(image_id)
+
+    return templates.TemplateResponse(
+        "histogram_output.html",
+        {
+            "request": request,
+            "image_id": image_id,
+            "histogram_base64": histogram_base64,  # Pass the histogram base64 to the context
+        },
     )
