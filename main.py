@@ -1,4 +1,6 @@
 #from starlette.responses import StreamingResponse
+import numpy as np
+import matplotlib.pyplot as plt
 from fastapi import FastAPI
 import os
 from fastapi.responses import FileResponse
@@ -70,4 +72,30 @@ async def request_classification(request: Request):
 async def download_scores():    
     return FileResponse('classification_scores.json', media_type='application/json', filename='classification_scores.json')
 
-#@app.post("/download_plot")
+
+@app.get("/download_plot")
+async def download_plot():
+    with open('classification_scores.json', 'r') as f:
+        classification_scores = json.load(f)
+
+    # Extract class labels and scores from the list
+    classes, scores = zip(*classification_scores)
+
+    # Create an index for each class
+    class_indices = list(range(1, len(classes) + 1))
+
+    # Create a bar plot
+    plt.barh(class_indices, scores)
+    # Optionally rotate class labels for better readability
+    plt.yticks(class_indices, classes, ha='right')
+    plt.ylabel('Class')
+    plt.xlabel('Score')
+    plt.title('Classification Scores')
+
+    # Save the plot as a PNG file
+    plt.savefig('classification_plot.png')
+
+    # Close the plot to free up resources
+    plt.close()
+
+    return FileResponse('classification_plot.png', media_type='application/png', filename='classification_plot.png')
