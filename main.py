@@ -1,4 +1,4 @@
-#from starlette.responses import StreamingResponse
+# from starlette.responses import StreamingResponse
 import numpy as np
 import matplotlib.pyplot as plt
 from fastapi import FastAPI
@@ -14,7 +14,7 @@ from app.config import Configuration
 from app.forms.classification_form import ClassificationForm
 from app.ml.classification_utils import classify_image
 from app.utils import list_images
-#from fastapi.responses import FileResponse
+# from fastapi.responses import FileResponse
 
 app = FastAPI()
 config = Configuration()
@@ -66,10 +66,8 @@ async def request_classification(request: Request):
     )
 
 
-
-
 @app.get("/download_scores")
-async def download_scores():    
+async def download_scores():
     return FileResponse('classification_scores.json', media_type='application/json', filename='classification_scores.json')
 
 
@@ -84,8 +82,17 @@ async def download_plot():
     # Create an index for each class
     class_indices = list(range(1, len(classes) + 1))
 
+    # Invert the order of the classes
+    class_indices = class_indices[::-1]
+    classes = classes[::-1]
+
+    # Create the appropriate dimension figure
+    plt.figure(figsize=(11, len(classes)))
     # Create a bar plot
-    plt.barh(class_indices, scores)
+    plt.grid(alpha=0.3)
+    plt.barh(class_indices, scores, color=[
+        '#1A4A04', '#750014', '#795703', '#06216C', '#3F0355'])
+
     # Optionally rotate class labels for better readability
     plt.yticks(class_indices, classes, ha='right')
     plt.ylabel('Class')
