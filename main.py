@@ -84,12 +84,12 @@ async def download_plot():
 
     # Invert the order of the classes
     class_indices = class_indices[::-1]
-    classes = classes[::-1]
+    
 
     # Create the appropriate dimension figure
     plt.figure(figsize=(11, len(classes)))
     # Create a bar plot
-    plt.grid(alpha=0.3)
+    plt.grid(alpha=0.2)
     plt.barh(class_indices, scores, color=[
         '#1A4A04', '#750014', '#795703', '#06216C', '#3F0355'])
 
