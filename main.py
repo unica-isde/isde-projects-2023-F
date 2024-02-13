@@ -84,7 +84,6 @@ async def download_plot():
 
     # Invert the order of the classes
     class_indices = class_indices[::-1]
-    
 
     # Create the appropriate dimension figure
     plt.figure(figsize=(11, len(classes)))
