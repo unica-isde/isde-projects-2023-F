@@ -4,6 +4,10 @@ from fastapi import FastAPI
 import os
 from fastapi.responses import FileResponse
 import json
+
+from typing import Dict, List
+from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi.responses import HTMLResponse
 import os
 from typing import Dict, List, Annotated
 from fastapi import FastAPI, Request, File, UploadFile
@@ -21,6 +25,13 @@ from app.utils import list_images, generate_histogram
 import matplotlib.pyplot as plt
 import numpy as np
 from app.utils import list_images
+
+from app.forms.transformation_form import TransformationForm
+from PIL import Image, ImageEnhance
+import os
+import time 
+
+
 from starlette.datastructures import URL
 
 app = FastAPI()
@@ -139,6 +150,53 @@ async def request_histogram(request: Request):
             "histogram_base64": histogram_base64,  # Pass the histogram base64 to the context
         },
     )
+
+
+@app.get("/transformations")
+def create_transformation(request: Request):
+    return templates.TemplateResponse(
+        "transformation_select.html",
+        {"request": request, "images": list_images(), "models": Configuration.models},
+    )
+def delete_temp_img(temp_path):
+    time.sleep(1)
+    os.remove("app/static/imagenet_subset/" + temp_path)
+
+@app.post("/transformations")
+async def request_transformation(request: Request, background_tasks: BackgroundTasks):
+    form = TransformationForm(request)
+    await form.load_data()
+    image_id = form.image_id
+    model_id = form.model_id
+
+    with Image.open("app/static/imagenet_subset/" + image_id) as img:
+        img = ImageEnhance.Color(img).enhance(form.color)
+        img = ImageEnhance.Brightness(img).enhance(form.brightness)
+        img = ImageEnhance.Contrast(img).enhance(form.contrast)
+        img = ImageEnhance.Sharpness(img).enhance(form.sharpness)
+
+        temp_path = f"temp.{image_id}"
+        img.save("app/static/imagenet_subset/" + temp_path)
+        img.close()
+
+        classification_scores = classify_image(model_id = model_id, img_id = temp_path)
+
+        with open("app/static/transformedImage.json", "w") as json_file:
+            json.dump(classification_scores, json_file)
+            json_file.close()
+
+        response = templates.TemplateResponse(
+            "transformation_output.html",
+            {
+                "request": request,
+                "image_id": temp_path,
+                "classification_scores": json.dumps(classification_scores),
+            },
+        )
+
+        background_tasks.add_task(delete_temp_img, temp_path)
+        return response
+
 @app.post("/upload/")
 async def create_upload_file(
     request: Request,
@@ -228,3 +286,4 @@ async def download_plot():
     plt.close()
 
     return FileResponse('classification_plot.png', media_type='application/png', filename='classification_plot.png')
+

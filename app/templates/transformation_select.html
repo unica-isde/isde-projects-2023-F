@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .title{
+      display: inline-block;
+      width: 80px;
+      text-align: left;
+      font-size: 12px;
+    }
+  </style>
+
+    <h1>Select Model and Image</h1>
+    <form method="post" novalidate>
+        <h4>
+            Model:
+        </h4>
+        <p>
+            <select name="model_id">
+                {% for model in models %}
+                  <option value="{{ model }}" SELECTED>{{ model }}</option>
+                {% endfor %}     
+              </select>
+        </p>
+        <h4>
+            Image:
+        </h4>
+        <p>
+            <select name="image_id">
+                {% for image in images %}
+                  <option value="{{ image }}" SELECTED>{{ image }}</option>
+                {% endfor %}     
+              </select>
+        </p>
+        <h4>
+            Image Transformation:
+        </h4>
+        <p class = "title">
+            <label for="color">Color:</label>
+            <input type="range" name="color" id="color" step=".01" min="0.0" max="1.0" value="1.0">
+
+            <label for="brightness">Brightness:</label>
+            <input type="range" name="brightness" id="brightness" step=".01" min="0.0" max="5" value="1.0">
+
+            <label for="contrast">Contrast:</label>
+            <input type="range" name="contrast" id="contrast" step=".01" min="0.0" max="5" value="1.0">
+    
+            <label for="sharpness">Sharpness:</label>
+            <input type="range" name="sharpness" id="sharpness" step=".01" min="0.0" max="2.0" value="1.0">
+        </p>
+        <p>
+            <button type="submit" class="btn btn-dark mb-2">Submit</button>
+        </p>
+    </form>
+{% endblock %}
