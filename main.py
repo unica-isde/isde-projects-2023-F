@@ -1,20 +1,24 @@
-# from starlette.responses import StreamingResponse
 import numpy as np
 import matplotlib.pyplot as plt
 from fastapi import FastAPI
 import os
 from fastapi.responses import FileResponse
 import json
-from typing import Dict, List
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+import os
+from typing import Dict, List, Annotated
+from fastapi import FastAPI, Request, File, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import redis
+import shutil
+from rq import Connection, Queue
+from rq.job import Job
 from app.config import Configuration
 from app.forms.classification_form import ClassificationForm
 from app.ml.classification_utils import classify_image
 from app.utils import list_images
-# from fastapi.responses import FileResponse
+from starlette.datastructures import URL
 
 app = FastAPI()
 config = Configuration()
@@ -29,30 +33,43 @@ def info() -> Dict[str, List[str]]:
     the list of available image files."""
     list_of_images = list_images()
     list_of_models = Configuration.models
-    data = {"models": list_of_models, "images": list_of_images}
+    data = {
+        "models": list_of_models, 
+        "images": list_of_images
+        }
     return data
 
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     """The home page of the service."""
-    return templates.TemplateResponse("home.html", {"request": request})
-
+    return templates.TemplateResponse(
+        "home.html", 
+        {
+            "request": request
+            }
+        )    
 
 @app.get("/classifications")
 def create_classify(request: Request):
     return templates.TemplateResponse(
         "classification_select.html",
-        {"request": request, "images": list_images(), "models": Configuration.models},
+        {
+            "request": request, 
+            "images": list_images(), 
+            "models": Configuration.models, 
+            "userImage": 0
+            },
     )
 
-
 @app.post("/classifications")
-async def request_classification(request: Request):
+async def request_classification(
+        request: Request
+    ):
     form = ClassificationForm(request)
     await form.load_data()
-    image_id = form.image_id
-    model_id = form.model_id
+    image_id = form.image_id     
+    model_id = form.model_id       
     classification_scores = classify_image(model_id=model_id, img_id=image_id)
     with open('classification_scores.json', 'w') as f:
         json.dump(classification_scores, f)
@@ -61,10 +78,89 @@ async def request_classification(request: Request):
         {
             "request": request,
             "image_id": image_id,
-            "classification_scores": json.dumps(classification_scores),
+            "classification_scores": json.dumps(classification_scores),            
+            "backButton" : "/classifications"
+        },        
+    )
+    
+@app.get("/users_image")
+def create_classify(request: Request):
+    return templates.TemplateResponse(
+        "classification_select.html",
+        {
+            "request": request, 
+            "images": list_images(), 
+            "models": Configuration.models,
+            "userImage": 1
         },
     )
 
+@app.post("/users_image")
+async def users_image(request: Request):
+    form = ClassificationForm(request)
+    await form.load_data()
+    image_id = "n00000000_usersImage.JPEG"
+    model_id = form.model_id
+    classification_scores = classify_image(model_id=model_id, img_id=image_id)   
+    return templates.TemplateResponse(
+        "classification_output.html",
+        {
+            "request": request,
+            "image_id": image_id,
+            "classification_scores": json.dumps(classification_scores),
+            "backButton" : "/users_image"
+        },
+    )
+
+@app.post("/upload/")
+async def create_upload_file(
+    request: Request,
+    image_id: UploadFile = File(...)
+):   
+    if(
+        image_id.filename.endswith(".jpg") |
+        image_id.filename.endswith(".JPEG") |
+        image_id.filename.endswith(".png") |
+        image_id.filename.endswith(".webp")
+    ):
+        with open("./app/static/imagenet_subset/n00000000_usersImage.JPEG", "wb") as buffer:
+            shutil.copyfileobj(image_id.file, buffer)
+            form = ClassificationForm(request)      
+        await form.load_data()
+        image_id = "n00000000_usersImage.JPEG"
+        model_id = form.model_id
+        classification_scores = classify_image(model_id=model_id, img_id=image_id)
+        request._url = URL("/classifications")
+        return templates.TemplateResponse(
+            "classification_output.html",
+            {
+                "request": request,
+                "image_id": image_id,
+                "classification_scores": json.dumps(classification_scores),
+                "backButton" : "/delete"
+            },
+        )
+    else:
+        return templates.TemplateResponse(
+            "classification_output.html",
+            {
+                "request": request,
+                "image_id": "sorry.png",
+                "classification_scores": "SRY!",
+                "backButton" : "/users_image"
+            },
+        )
+
+@app.get("/delete")
+async def deleteFile(request : Request):
+    if(os.path.isfile("./app/static/imagenet_subset/n00000000_usersImage.JPEG")):
+        os.remove("./app/static/imagenet_subset/n00000000_usersImage.JPEG")
+    return templates.TemplateResponse(
+            "deleteFile.html",
+            {
+                "request": request,
+            }
+        )
 
 @app.get("/download_scores")
 async def download_scores():

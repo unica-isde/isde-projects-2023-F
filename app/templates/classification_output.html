@@ -12,12 +12,17 @@
         }
 
     </style>
-<div class="row">
-    <div class="col">
-        <div class="card">
-            <img class="large-front-thumbnail"
-                src="{{ 'static/imagenet_subset/'+image_id }} "
-                alt={{ image_id }} />
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <img class="large-front-thumbnail"
+                    {% if backButton == "/classifications" %}
+                    src="{{ 'static/imagenet_subset/'+image_id }}"
+                    {% else %}                    
+                    src="{{ '../static/imagenet_subset/'+image_id }}"
+                    {% endif %}
+                    alt={{ image_id }}/>
+            </div>
         </div>
     </div>
     <div class="col">
@@ -29,6 +34,7 @@
                     <h2 id="waitText"></h2>
                 </div>
             </div>
+
         </div>
         <!--Button for downloading the result-->
         <a class="btn btn-primary" href="/download_scores" download>Download
@@ -39,8 +45,9 @@
         <a class="btn btn-primary" href="/classifications"
             role="button">Back</a>
     </div>
-</div>
-<script src="{{ "static/graph.js" }}" id="makeGraph"
-    classification_scores="{{classification_scores}}"></script>
-
+    {% if backButton == "/classifications" %}
+    <script src="{{ "static/graph.js" }}" id="makeGraph" classification_scores="{{classification_scores}}"></script>
+    {% else %}
+    <script src="{{ "../static/graph.js" }}" id="makeGraph" classification_scores="{{classification_scores}}"></script>
+    {% endif %}
 {% endblock %}
