@@ -1,17 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-  .title{
-    display: inline-block;
-    width: 80px;
-    text-align: center;
-    font-size: 12px;
-    font-weight: bold;
-  }
-</style>
+
     <h1>Select Model and Image</h1>
-    <h5>(And specify values for image transformation, if needed.)</h5>
     <form method="post" novalidate>
         <h4>
             Model:
@@ -32,24 +23,6 @@
                   <option value="{{ image }}" SELECTED>{{ image }}</option>
                 {% endfor %}     
               </select>
-        </p>
-        <h4>
-          Image Transformation:
-        </h4>
-        <p>
-          <label for="quantity">Select values to modify the Image (1.0 indicates the default value.):</label>
-        </p>
-        <p>
-          <span class="title">Colour:</span>
-          <span class="title">Sharpness:</span>
-          <span class="title">Contrast:</span>
-          <span class="title">Brightness:</span>
-        </p>
-        <p>
-          <input type="number", id="Colour", name="Colour", min="0.0", max="2.0">
-          <input type="number", id="Sharpness", name="Sharpness", min="0.0", max="2.0">
-          <input type="number", id="Contrast", name="Contrast", min="0.0", max="2.0">
-          <input type="number", id="Brightness", name="Brightness", min="0.0", max="2.0">
         </p>
         <button type="submit" class="btn btn-dark mb-2">Submit</button>
     </form>
