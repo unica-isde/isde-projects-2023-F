@@ -20,24 +20,29 @@ def list_images():
     return list(img_names)
 
 def generate_histogram(image_id):
-    """Generates and returns a grayscale histogram of the image with the specified ID."""
+
+    """Generates and returns a color histogram of the image with the specified ID."""
     img_path = os.path.join(conf.image_folder_path, image_id)
     img = Image.open(img_path)
 
-    # Convert the image to grayscale
-    img_gray = img.convert('L')
+    # Convert the image to a numpy array
+    img_array = np.array(img)
 
-    # Convert the grayscale image to a numpy array
-    img_array = np.array(img_gray)
-
-    # Flatten the image into a 1D array
-    flattened_img = img_array.flatten()
+    # Flatten the image into separate 1D arrays for each color channel
+    red_channel = img_array[:, :, 0].flatten()
+    green_channel = img_array[:, :, 1].flatten()
+    blue_channel = img_array[:, :, 2].flatten()
 
     # Create a new figure
     plt.figure()
 
-    # Generate the histogram
-    plt.hist(flattened_img, bins=256, color='gray', alpha=0.7)
+    # Generate the color histograms
+    plt.hist(red_channel, bins=256, color='red', alpha=0.5, label='Red')
+    plt.hist(green_channel, bins=256, color='green', alpha=0.5, label='Green')
+    plt.hist(blue_channel, bins=256, color='blue', alpha=0.5, label='Blue')
+
+    # Display the legend
+    plt.legend()
 
     # Save the plot to a BytesIO object
     buffer = BytesIO()
