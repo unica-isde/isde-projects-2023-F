@@ -158,10 +158,15 @@ def create_transformation(request: Request):
         "transformation_select.html",
         {"request": request, "images": list_images(), "models": Configuration.models},
     )
+
+
+# This function is used to delete the temporary image created after the transformation
 def delete_temp_img(temp_path):
     time.sleep(1)
     os.remove("app/static/imagenet_subset/" + temp_path)
 
+
+# This function is used to apply the transformation to the image and classify it
 @app.post("/transformations")
 async def request_transformation(request: Request, background_tasks: BackgroundTasks):
     form = TransformationForm(request)
@@ -169,22 +174,26 @@ async def request_transformation(request: Request, background_tasks: BackgroundT
     image_id = form.image_id
     model_id = form.model_id
 
+    # Open the image and apply the transformations
     with Image.open("app/static/imagenet_subset/" + image_id) as img:
         img = ImageEnhance.Color(img).enhance(form.color)
         img = ImageEnhance.Brightness(img).enhance(form.brightness)
         img = ImageEnhance.Contrast(img).enhance(form.contrast)
         img = ImageEnhance.Sharpness(img).enhance(form.sharpness)
 
+        # Save the transformed image
         temp_path = f"temp.{image_id}"
         img.save("app/static/imagenet_subset/" + temp_path)
         img.close()
 
         classification_scores = classify_image(model_id = model_id, img_id = temp_path)
 
+        # Save the classification scores to a JSON file
         with open("app/static/transformedImage.json", "w") as json_file:
             json.dump(classification_scores, json_file)
             json_file.close()
 
+        # Render the response
         response = templates.TemplateResponse(
             "transformation_output.html",
             {
@@ -194,6 +203,7 @@ async def request_transformation(request: Request, background_tasks: BackgroundT
             },
         )
 
+        # Delete the temporary image after the response is sent
         background_tasks.add_task(delete_temp_img, temp_path)
         return response
 
