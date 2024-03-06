@@ -215,6 +215,7 @@ async def create_upload_file(
     if(
         image_id.filename.endswith(".jpg") |
         image_id.filename.endswith(".JPEG") |
+        image_id.filename.endswith(".jpeg") |
         image_id.filename.endswith(".png") |
         image_id.filename.endswith(".webp")
     ):
