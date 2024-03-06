@@ -227,12 +227,12 @@ async def create_upload_file(
         )
     else:
         return templates.TemplateResponse(
-            "classification_output.html",
+           "classification_select.html",
             {
-                "request": request,
-                "image_id": "sorry.png",
-                "classification_scores": "SRY!",
-                "backButton" : "/users_image"
+                "request": request, 
+                "images": list_images(), 
+                "models": Configuration.models,
+                "userImage": 1
             },
         )
 
