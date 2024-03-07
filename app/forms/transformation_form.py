@@ -1,9 +1,8 @@
 from typing import List
 from fastapi import Request
-from app.forms.classification_form import ClassificationForm
 
 
-class TransformationForm(ClassificationForm):
+class TransformationForm():
     def __init__(self, request: Request) -> None:
         self.request: Request = request
         self.errors: List = []

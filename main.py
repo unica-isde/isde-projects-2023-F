@@ -179,7 +179,7 @@ async def request_transformation(request: Request, background_tasks: BackgroundT
             model_id=model_id, img_id=temp_path)
 
         # Save the classification scores to a JSON file
-        with open("app/static/transformedImage.json", "w") as json_file:
+        with open("app/static/transformationScores.json", "w") as json_file:
             json.dump(classification_scores, json_file)
             json_file.close()
 
