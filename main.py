@@ -89,6 +89,15 @@ async def request_classification(
 
 @app.get("/users_image")
 def create_classify(request: Request):
+    """
+    Endpoint to render the classification_select.html template and pass necessary data.
+
+    Args:
+        request (Request): The HTTP request object.
+
+    Returns:
+        TemplateResponse: The rendered template response.
+    """
     return templates.TemplateResponse(
         "classification_select.html",
         {
@@ -102,6 +111,15 @@ def create_classify(request: Request):
 
 @app.post("/users_image")
 async def users_image(request: Request):
+    """
+    Handle the POST request for user's image classification, and gives it a placeholder name: n00000000_usersImage.JPEG.
+
+    Args:
+        request (Request): The incoming request object.
+
+    Returns:
+        TemplateResponse: The template response containing the classification output.
+    """
     form = ClassificationForm(request)
     await form.load_data()
     image_id = "n00000000_usersImage.JPEG"
@@ -118,8 +136,76 @@ async def users_image(request: Request):
     )
 
 
+@app.post("/upload/")
+async def create_upload_file(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    image_id: UploadFile = File(...)
+):
+    """
+    Create an upload file.
+    Checks whether the file is an image.
+    If this is the case, gives it a random name.
+
+    Args:
+        request (Request): The request object.
+        background_tasks (BackgroundTasks): The background tasks object.
+        image_id (UploadFile): The uploaded image file.
+
+    Returns:
+        TemplateResponse: The response containing the classification output or the classification selection page.
+    """
+    rand = random.randint(1, 10000000)
+
+    try:
+        temp_name = f"n{rand}_usersImage.JPEG"
+        temp_path = f"./app/static/imagenet_subset/{temp_name}"
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(image_id.file, buffer)
+            form = ClassificationForm(request)
+        await form.load_data()
+        image_id = temp_name
+        model_id = form.model_id
+        classification_scores = classify_image(
+            model_id=model_id, img_id=image_id)
+        request._url = URL("/classifications")
+        response = templates.TemplateResponse(
+            "classification_output.html",
+            {
+                "request": request,
+                "image_id": image_id,
+                "classification_scores": json.dumps(classification_scores),
+            },
+        )
+        background_tasks.add_task(delete_temp_img, temp_path)
+        
+        return response
+    except:
+        response= templates.TemplateResponse(
+            "classification_select.html",
+            {
+                "request": request,
+                "images": list_images(),
+                "models": Configuration.models,
+                "userImage": 1
+            },
+        )
+
+        background_tasks.add_task(delete_temp_img, temp_path)
+        return response
+
+
 @app.get("/histograms")
 def create_histograms(request: Request):
+    """
+    Endpoint to create histograms.
+
+    Args:
+        request (Request): The HTTP request object.
+
+    Returns:
+        TemplateResponse: The HTML template response containing the image selection page.
+    """
     return templates.TemplateResponse(
         "histogram_select.html",
         {"request": request, "images": list_images()},
@@ -128,6 +214,15 @@ def create_histograms(request: Request):
 
 @app.post("/histograms")
 async def request_histogram(request: Request):
+    """
+    Handle the POST request for generating histograms.
+
+    Args:
+        request (Request): The incoming request object.
+
+    Returns:
+        TemplateResponse: The response containing the histogram of the selected image.
+    """
     form = ClassificationForm(request)
     await form.load_data()
     image_id = form.image_id
@@ -148,6 +243,16 @@ async def request_histogram(request: Request):
 
 @app.get("/transformations")
 def create_transformation(request: Request):
+    """
+    Handle GET request for the '/transformations' endpoint.
+    
+    Args:
+        request (Request): The incoming request object.
+    
+    Returns:
+        TemplateResponse: The template response containing the 'transformation_select.html' template,
+        along with the request object and the list of images and models.
+    """
     return templates.TemplateResponse(
         "transformation_select.html",
         {"request": request, "images": list_images(), "models": Configuration.models},
@@ -155,7 +260,17 @@ def create_transformation(request: Request):
 
 
 # This function is used to delete the temporary image created after the transformation
+
 def delete_temp_img(temp_path):
+    """
+    Deletes the temporary image file at the specified path.
+
+    Args:
+        temp_path (str): The path of the temporary image file to be deleted.
+
+    Returns:
+        None
+    """
     time.sleep(1)
     os.remove(temp_path)
 
@@ -163,6 +278,16 @@ def delete_temp_img(temp_path):
 # This function is used to apply the transformation to the image and classify it
 @app.post("/transformations")
 async def request_transformation(request: Request, background_tasks: BackgroundTasks):
+    """
+    Handle the POST request for image transformations.
+
+    Args:
+        request (Request): The incoming request object.
+        background_tasks (BackgroundTasks): The background task, used to delete the temporary image after a set amount of time.
+
+    Returns:
+        TemplateResponse: The response containing the transformed image and classification scores.
+    """
     form = TransformationForm(request)
     await form.load_data()
     image_id = form.image_id
@@ -181,13 +306,7 @@ async def request_transformation(request: Request, background_tasks: BackgroundT
         img.save(temp_path)
         img.close()
 
-        classification_scores = classify_image(
-            model_id=model_id, img_id=temp_name)
-
-        # Save the classification scores to a JSON file
-        with open("app/scores/transformationScores.json", "w") as json_file:
-            json.dump(classification_scores, json_file)
-            json_file.close()
+        classification_scores = classify_image(model_id=model_id, img_id=temp_name)
 
         # Render the response
         response = templates.TemplateResponse(
@@ -204,65 +323,20 @@ async def request_transformation(request: Request, background_tasks: BackgroundT
         return response
 
 
-@app.post("/upload/")
-async def create_upload_file(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    image_id: UploadFile = File(...)
-):
-    rand = random.randint(1, 10000000)
-    
-    try:
-        temp_name = f"n{rand}_usersImage.JPEG"
-        temp_path = f"./app/static/imagenet_subset/{temp_name}"
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(image_id.file, buffer)
-            form = ClassificationForm(request)
-        await form.load_data()
-        image_id = temp_name
-        model_id = form.model_id
-        classification_scores = classify_image(
-            model_id=model_id, img_id=image_id)
-        request._url = URL("/classifications")
-        response = templates.TemplateResponse(
-            "classification_output.html",
-            {
-                "request": request,
-                "image_id": image_id,
-                "classification_scores": json.dumps(classification_scores),
-                # "backButton": "/delete"
-            },
-        )
-        background_tasks.add_task(
-            delete_temp_img, temp_path)
-        return response
-    except: 
-        return templates.TemplateResponse(
-            "classification_select.html",
-            {
-                "request": request,
-                "images": list_images(),
-                "models": Configuration.models,
-                "userImage": 1
-            },
-        )
-
-"""
-@app.get("/delete")
-async def deleteFile(request: Request):
-    if (os.path.isfile("./app/static/imagenet_subset/n00000000_usersImage.JPEG")):
-        os.remove("./app/static/imagenet_subset/n00000000_usersImage.JPEG")
-    return templates.TemplateResponse(
-        "deleteFile.html",
-        {
-            "request": request,
-        }
-    )
-"""
-
-
 @app.get("/download_scores")
 async def download_scores(request: Request, background_tasks: BackgroundTasks):
+    """
+    Download scores endpoint.
+
+    This endpoint allows users to download classification scores in JSON format.
+
+    Parameters:
+    - request: The incoming request object.
+    - background_tasks: Background tasks to be executed.
+
+    Returns:
+    - FileResponse: The file response containing the classification scores in JSON format.
+    """
     unique_id = request.query_params.get("unique_id")
     temp_path = "app/scores/classification_scores"+unique_id+".json"
     return FileResponse(temp_path, media_type='application/json', filename='classification_scores.json')
@@ -270,6 +344,16 @@ async def download_scores(request: Request, background_tasks: BackgroundTasks):
 
 @app.get("/download_plot")
 async def download_plot(request: Request, background_tasks: BackgroundTasks,):
+    """
+    Generate and download a classification plot.
+
+    Args:
+        request (Request): The HTTP request object.
+        background_tasks (BackgroundTasks): The background tasks object.
+
+    Returns:
+        FileResponse: The file response containing the generated plot.
+    """
     unique_id = request.query_params.get("unique_id")
     with open("app/scores/classification_scores"+unique_id+".json", 'r') as f:
         classification_scores = json.load(f)
@@ -309,6 +393,15 @@ async def download_plot(request: Request, background_tasks: BackgroundTasks,):
 
 @app.post("/delete-content")
 async def delete_content(request: Request):
+    """
+    Delete content based on the provided unique_id.
+
+    Args:
+        request (Request): The HTTP request object.
+
+    Returns:
+        dict: A dictionary containing the success message.
+    """
     unique_id = request.query_params.get("unique_id")
     if os.path.exists("app/scores/classification_plot"+unique_id+".png"):
         os.remove("app/scores/classification_plot"+unique_id+".png")
