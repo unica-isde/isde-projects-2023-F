@@ -37,18 +37,29 @@
             </div> 
             {% if backButton == "/classifications" %}
             <!--Button for downloading the result-->
-            <a class="btn btn-primary" href="/download_scores" download>Download
+            <a class="btn btn-primary" href="{{"/download_scores?unique_id="+unique_id}}" download>Download
                 classification scores</a>
             <!--Button for downloading the plot-->
-            <a class="btn btn-primary" href="/download_plot" download>Download
+            <a class="btn btn-primary" href="{{"/download_plot?unique_id="+unique_id}}"  download>Download
                 plot</a>
-            {% endif %}
             <a class="btn btn-primary" href="/classifications"
                 role="button">Back</a>
+            {% else %}
+            <a class="btn btn-primary" href="/users_image"
+                role="button">Back</a>
+            {% endif %}
         </div>
     </div>
     {% if backButton == "/classifications" %}
     <script src="{{ "static/graph.js" }}" id="makeGraph" classification_scores="{{classification_scores}}"></script>
+    <script>
+        window.addEventListener('beforeunload', function (e) {
+            // Send an AJAX request to notify the server
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{"/delete-content?unique_id="+unique_id}}', true);
+            xhr.send();
+        });
+    </script>
     {% else %}
     <script src="{{ "../static/graph.js" }}" id="makeGraph" classification_scores="{{classification_scores}}"></script>
     {% endif %}
