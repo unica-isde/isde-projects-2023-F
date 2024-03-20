@@ -3,7 +3,16 @@
 {% block content %}
 
     <h1>Select Model and Image</h1>
-    <form method="post" novalidate>
+    
+    {% if userImage == 0 %}
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+
+    {% else %}     
+      
+    <form method="post" action="/upload/" enctype="multipart/form-data" novalidate>
+      
+      {% endif %}
         <h4>
             Model:
         </h4>
@@ -17,13 +26,27 @@
         <h4>
             Image:
         </h4>
-        <p>
-            <select name="image_id">
-                {% for image in images %}
-                  <option value="{{ image }}" SELECTED>{{ image }}</option>
-                {% endfor %}     
-              </select>
-        </p>
+        
+        {% if userImage == 0 %}
+
+          <p>
+              <select name="image_id">
+                  {% for image in images %}
+                    <option value="{{ image }}" SELECTED>{{ image }}</option>
+                  {% endfor %}     
+                </select>
+                <div style="visibility: hidden">
+                  <input type="file" id="myFile" name="file" value="null">
+                </div>
+          </p>
+
+          {% else %}
+
+            <p>              
+                <input type="file" id="myFile" name="image_id" value="user">
+            </p>
+        {% endif %}
+        
         <button type="submit" class="btn btn-dark mb-2">Submit</button>
     </form>
 {% endblock %}

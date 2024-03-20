@@ -17,3 +17,4 @@ build/
 
 # this should be downloaded during repo setup
 app/static/imagenet_subset
+app/scores
